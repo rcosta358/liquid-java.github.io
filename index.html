@@ -101,9 +101,11 @@ Author URL: http://w3layouts.com
         <div class="col-lg-2 content-left mt-lg-0 mt-5 pl-lg-5">
         </div>
 				<div class="col-lg-7 content-left mt-lg-0 mt-5 pl-lg-5">
-          <div class="iframe_container">
-          <iframe class="responsive-iframe" src="https://www.youtube-nocookie.com/embed/MOZESsOtUAU" title="YouTube video player" style="border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-          </div>
+          <a class="lj-resource-card" href="https://www.youtube.com/watch?v=MOZESsOtUAU" target="_blank" rel="noopener">
+            <span class="lj-resource-icon fa fa-play-circle" aria-hidden="true"></span>
+            <span class="lj-resource-title">Watch the LiquidJava introduction</span>
+            <span class="lj-resource-sub">See refinements in action on YouTube.</span>
+          </a>
 				</div>
 			</div>
       <br/><br/><br/>
@@ -523,12 +525,12 @@ public class Grade {
 
           <pre class="lj-code"><code id="ljCode"></code></pre>
 
-          <div class="lj-verifier" id="ljVerifier" data-state="ok">
+          <div class="lj-verifier" id="ljVerifier" data-state="spec">
             <div class="lj-verifier-head">
               <span class="lj-verifier-label">verifier</span>
-              <button type="button" class="lj-run" id="ljRun">▶ Run verifier</button>
+              <button type="button" class="lj-run" id="ljRun" disabled>▶ Run verifier</button>
             </div>
-            <pre class="lj-verifier-body" id="ljVerifierBody"></pre>
+            <div class="lj-verifier-body" id="ljVerifierBody" role="status" aria-live="polite"></div>
           </div>
         </article>
       </div>
@@ -603,246 +605,7 @@ public class Grade {
       document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 
-  <!-- Examples gallery -->
-  <script>
-  (function () {
-    const $ = (id) => document.getElementById(id);
-    const root = $('ljGallery');
-    if (!root) return;
-
-    const state = {
-      examples: [],
-      activeId: null,
-      activeTab: 'spec',
-      complexity: 'all',
-      factors: new Set(),
-      mermaidReady: false,
-      runToken: 0,
-    };
-
-    const fileFor = (ex, tab) => ({
-      spec: 'spec.java',
-      correct: 'correct.java',
-      incorrect: 'incorrect.java',
-    }[tab]);
-
-    async function fetchText(path) {
-      const r = await fetch(path, { cache: 'no-cache' });
-      if (!r.ok) throw new Error(path + ' -> ' + r.status);
-      return r.text();
-    }
-
-    function passesFilter(ex) {
-      if (state.complexity !== 'all' && ex.complexity !== state.complexity) return false;
-      for (const f of state.factors) if (!ex.factors.includes(f)) return false;
-      return true;
-    }
-
-    function renderList() {
-      const list = $('ljList');
-      list.innerHTML = '';
-      const visible = state.examples.filter(passesFilter);
-      $('ljCount').textContent =
-        visible.length + ' of ' + state.examples.length + ' examples';
-      for (const ex of visible) {
-        const li = document.createElement('li');
-        li.className = 'lj-item' + (ex.id === state.activeId ? ' lj-item--active' : '');
-        li.dataset.id = ex.id;
-        li.innerHTML =
-          '<span class="lj-item-title">' + ex.title + '</span>' +
-          '<span class="lj-item-class">' + ex.className + '</span>' +
-          '<span class="lj-badge lj-badge--' + ex.complexity + '">' + ex.complexity + '</span>';
-        li.addEventListener('click', () => selectExample(ex.id));
-        list.appendChild(li);
-      }
-      if (visible.length && !visible.some(e => e.id === state.activeId)) {
-        selectExample(visible[0].id);
-      }
-    }
-
-    async function renderDetail() {
-      const ex = state.examples.find(e => e.id === state.activeId);
-      if (!ex) return;
-      $('ljClass').textContent = ex.className;
-      $('ljTitle').textContent = ex.title;
-      $('ljBlurb').textContent = ex.blurb;
-      const meta = $('ljMeta');
-      meta.innerHTML =
-        '<span class="lj-badge lj-badge--' + ex.complexity + '">' + ex.complexity + '</span>' +
-        ex.factors.map(f =>
-          '<span class="lj-factor">' + f + '</span>').join('');
-
-      // mermaid diagram
-      const mer = await fetchText('assets/examples/data/' + ex.id + '/state.mmd');
-      const mountId = 'ljMermaidGraph_' + Date.now();
-      const host = $('ljMermaid');
-      host.innerHTML = '';
-      if (state.mermaidReady && window.mermaid) {
-        try {
-          const { svg } = await window.mermaid.render(mountId, mer);
-          host.innerHTML = svg;
-        } catch (e) {
-          host.textContent = mer;
-        }
-      } else {
-        host.textContent = mer;
-      }
-
-      // active tab content
-      await renderTab();
-    }
-
-    async function renderTab() {
-      const ex = state.examples.find(e => e.id === state.activeId);
-      const code = await fetchText(
-        'assets/examples/data/' + ex.id + '/' + fileFor(ex, state.activeTab));
-      const codeEl = $('ljCode');
-      codeEl.className = 'language-java';
-      codeEl.textContent = code;
-      if (window.Prism && window.Prism.highlightElement) {
-        try { window.Prism.highlightElement(codeEl); } catch (e) {}
-      }
-      codeEl.classList.remove('lj-code-fade');
-      // restart fade animation
-      void codeEl.offsetWidth;
-      codeEl.classList.add('lj-code-fade');
-
-      const verifier = $('ljVerifier');
-      const body = $('ljVerifierBody');
-      state.runToken++;
-      if (state.activeTab === 'incorrect') {
-        verifier.dataset.state = 'err';
-        body.textContent = '✕ ' + ex.violation;
-      } else if (state.activeTab === 'correct') {
-        verifier.dataset.state = 'ok';
-        body.textContent = '✓ All refinements verified.';
-      } else {
-        verifier.dataset.state = 'spec';
-        body.textContent = '— Press Run to check a usage in the Misuse / Correct tabs.';
-      }
-    }
-
-    function runVerifier() {
-      const body = $('ljVerifierBody');
-      const target = body.textContent;
-      if (!target) return;
-      const myToken = ++state.runToken;
-      body.textContent = '';
-      let i = 0;
-      const tick = () => {
-        if (myToken !== state.runToken) return;
-        body.textContent = target.slice(0, i);
-        i++;
-        if (i <= target.length) setTimeout(tick, 12);
-      };
-      tick();
-    }
-
-    function selectExample(id) {
-      state.activeId = id;
-      // update list active state
-      for (const li of document.querySelectorAll('#ljList .lj-item')) {
-        li.classList.toggle('lj-item--active', li.dataset.id === id);
-      }
-      renderDetail();
-    }
-
-    function selectTab(tab) {
-      state.activeTab = tab;
-      for (const btn of document.querySelectorAll('.lj-tab')) {
-        const isActive = btn.dataset.tab === tab;
-        btn.classList.toggle('lj-tab--active', isActive);
-        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-      }
-      renderTab();
-    }
-
-    function wireFilters() {
-      for (const group of document.querySelectorAll('.lj-filters')) {
-        const kind = group.dataset.group;
-        for (const chip of group.querySelectorAll('.lj-chip')) {
-          chip.addEventListener('click', () => {
-            const v = chip.dataset.value;
-            if (kind === 'complexity') {
-              state.complexity = v;
-              for (const c of group.querySelectorAll('.lj-chip'))
-                c.classList.toggle('lj-chip--active', c === chip);
-            } else {
-              if (state.factors.has(v)) state.factors.delete(v);
-              else state.factors.add(v);
-              chip.classList.toggle('lj-chip--active', state.factors.has(v));
-            }
-            renderList();
-          });
-        }
-      }
-    }
-
-    function wireTabs() {
-      for (const btn of document.querySelectorAll('.lj-tab')) {
-        btn.addEventListener('click', () => selectTab(btn.dataset.tab));
-      }
-      $('ljRun').addEventListener('click', runVerifier);
-    }
-
-    async function init() {
-      try {
-        state.examples = await (await fetch('assets/examples/examples.json', { cache: 'no-cache' })).json();
-      } catch (e) {
-        root.innerHTML = '<p class="lj-error">Could not load examples.</p>';
-        return;
-      }
-      if (window.mermaid) {
-        window.mermaid.initialize({
-          startOnLoad: false,
-          theme: 'base',
-          themeVariables: {
-            primaryColor: '#ffe7ee',
-            primaryTextColor: '#212529',
-            primaryBorderColor: '#cf0e4e',
-            lineColor: '#cf0e4e',
-            fontFamily: 'Nunito, system-ui, sans-serif',
-            fontSize: '14px',
-          },
-          flowchart: { htmlLabels: true },
-        });
-        state.mermaidReady = true;
-      } else {
-        // mermaid loads with `defer`; poll briefly
-        const start = Date.now();
-        while (!window.mermaid && Date.now() - start < 3000) {
-          await new Promise(r => setTimeout(r, 50));
-        }
-        if (window.mermaid) {
-          window.mermaid.initialize({
-            startOnLoad: false,
-            theme: 'base',
-            themeVariables: {
-              primaryColor: '#fff7ec',
-              primaryTextColor: '#1a1a2e',
-              primaryBorderColor: '#1a1a2e',
-              lineColor: '#1a1a2e',
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '14px',
-            },
-          });
-          state.mermaidReady = true;
-        }
-      }
-      wireFilters();
-      wireTabs();
-      state.activeId = state.examples[0].id;
-      renderList();
-      renderDetail();
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-  })();
-  </script>
+  <script type="module" src="assets/js/gallery.js"></script>
 
 <!-- Smooth scrolling -->
 

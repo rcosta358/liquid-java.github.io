@@ -1,3 +1,5 @@
+import liquidjava.specification.*;
+
 @StateSet({"withThrowable", "noThrowable"})
 @ExternalRefinementsFor("java.lang.Throwable")
 public interface ThrowableRefinementsExpert {

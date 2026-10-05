@@ -1,15 +1,22 @@
-ImageWriteParam p = new ImageWriteParam(Locale.US);
+import javax.imageio.ImageWriteParam;
+import java.util.Locale;
 
-// Drive the tiling axis all the way to tilingSet...
-p.setTilingMode(2);            // -> tilingExplicit
-p.setTiling(64, 64, 0, 0);     // -> tilingSet
-int w = p.getTileWidth();      // ok
+class Example {
+    static void example() throws Exception {
+        ImageWriteParam p = new ImageWriteParam(Locale.US);
 
-// ...but the compression axis was never advanced.
-// It's still in startCompression — getCompressionType() needs
-// compressionExplicit or compressionSet.
-String type = p.getCompressionType();   // ✗ rejected
+        // Drive the tiling axis all the way to tilingSet...
+        p.setTilingMode(2);            // -> tilingExplicit
+        p.setTiling(64, 64, 0, 0);     // -> tilingSet
+        int w = p.getTileWidth();      // ok
 
-// Violation: getCompressionType() requires compressionExplicit(this)
-// or compressionSet(this), but the compression axis is in state
-// startCompression.
+        // ...but the compression axis was never advanced.
+        // It's still in startCompression — getCompressionType() needs
+        // compressionExplicit or compressionSet.
+        String type = p.getCompressionType();   // ✗ rejected
+
+        // Violation: getCompressionType() requires compressionExplicit(this)
+        // or compressionSet(this), but the compression axis is in state
+        // startCompression.
+    }
+}

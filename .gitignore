@@ -18,3 +18,10 @@ scripts/
 
 # Logs
 *.log
+
+# generated browser runtime
+verifier/
+isolation.js
+.browser-source/
+
+_site/

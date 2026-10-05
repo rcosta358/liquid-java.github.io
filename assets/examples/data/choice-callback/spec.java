@@ -1,3 +1,6 @@
+import liquidjava.specification.*;
+import javax.security.auth.callback.ChoiceCallback;
+
 @StateSet({"single", "multiple"})
 @ExternalRefinementsFor("javax.security.auth.callback.ChoiceCallback")
 public interface ChoiceCallbackRefinementsExpert {

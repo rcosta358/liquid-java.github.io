@@ -1,3 +1,6 @@
+import liquidjava.specification.*;
+import java.util.UUID;
+
 @ExternalRefinementsFor("java.util.UUID")
 @StateSet({"dceSecurityNameRandom", "maybeTime", "timeBased"})
 @RefinementAlias("Version(int v) { v >= 0 && v <= 4 }")

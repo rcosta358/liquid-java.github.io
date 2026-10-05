@@ -1,3 +1,11 @@
+import liquidjava.specification.*;
+import java.io.File;
+import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.stream.Stream;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipEntry;
+
 @ExternalRefinementsFor("java.util.zip.ZipFile")
 @StateSet({"opened", "closed"})
 @RefinementAlias("Mode(int x){ x == 1 || x == 4 || x == 5 }")

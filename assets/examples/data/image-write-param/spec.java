@@ -1,3 +1,7 @@
+import liquidjava.specification.*;
+import javax.imageio.ImageWriteParam;
+import java.util.Locale;
+
 // Two orthogonal @StateSet declarations describe two independent
 // state machines on the same object. The constructor places it in
 // the start state of BOTH axes; methods only constrain one axis.

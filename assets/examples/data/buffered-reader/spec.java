@@ -1,3 +1,7 @@
+import liquidjava.specification.*;
+import java.io.BufferedReader;
+import java.io.Reader;
+
 @RefinementAlias("NonNegative(int v) { v >= 0 }")
 @RefinementAlias("Positive(int v) { v > 0 }")
 @StateSet({"open", "marked", "closed"})

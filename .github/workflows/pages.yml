@@ -1,0 +1,65 @@
+name: Build and deploy website
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages-${{ github.event.pull_request.number || 'deploy' }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check out shared browser verifier
+        uses: actions/checkout@v4
+        with:
+          repository: liquid-java/liquidjava-docs
+          ref: 7b61cdde7010b06629c4cdaf298e5b54daba4f63
+          path: .browser-source
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build shared browser verifier
+        working-directory: .browser-source
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:playground
+          npm run test:playground
+          node scripts/playground/export.mjs ..
+
+      - name: Check gallery script
+        run: node --check assets/js/gallery.js
+      - name: Stage website
+        run: |
+          mkdir _site
+          cp index.html robots.txt sitemap.xml llms.txt _headers .nojekyll isolation.js _site/
+          cp -R assets .well-known verifier _site/
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: _site
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment

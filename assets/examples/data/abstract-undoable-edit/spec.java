@@ -1,3 +1,6 @@
+import liquidjava.specification.*;
+import javax.swing.undo.AbstractUndoableEdit;
+
 @StateSet({"aliveDone", "aliveNotDone", "notAlive"})
 @ExternalRefinementsFor("javax.swing.undo.AbstractUndoableEdit")
 public interface AbstractUndoableEditRefinementsExpert {
